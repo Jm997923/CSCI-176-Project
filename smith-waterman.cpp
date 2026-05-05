@@ -1,3 +1,17 @@
+/**
+ * Julian Mendoza & Noah Villanueva -- serial code for Smith Waterman algorithm
+ * 
+ * This program is meant to serve as the baseline for the Smith Waterman algorithm
+ * where it will be compared with the parallelized version of the algorithm to compare
+ * performance outcome.
+ * 
+ * $> g++ smith-waterman.cpp -o xxx
+ * $> ./xxx n
+ *  Where n is the size of the random strings that will be comapared (e.g. 20000)
+ *  (e.g. ./xxx 20000)
+ * Thank you!
+ */
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -65,10 +79,16 @@ void smithWaterman(const string& seq1, const string& seq2) {
     // 2. Traceback (Removed to prevent I/O bottlenecks during benchmarking)
 }
 
-int main() {
-    int str_size = 20000;
-    string s1 = generateSequence(str_size, 1);
-    string s2 = generateSequence(str_size, 2);
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        cout << "Error: ./filename n" <<  endl;
+        return -1;
+    }
+
+    int n = atoi(argv[1]);
+
+    string s1 = generateSequence(n, 1);
+    string s2 = generateSequence(n, 2);
     
     smithWaterman(s1, s2);
     

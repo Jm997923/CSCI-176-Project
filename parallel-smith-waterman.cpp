@@ -1,3 +1,21 @@
+/**
+ * Julian Mendoza & Noah Villanueva -- parallelized code for Smith Waterman 
+ *      algorithm using OpenMP
+ * 
+ * This program is the parallel version of the Smith Waterman algorithm.
+ * It takes advantage of OpenMP's simpler syntax and takes into account
+ * cache line sizes to minimize cache misses.
+ * 
+ * $> g++ -fopenmp parallel-smith-waterman.cpp -o xxx
+ * $> ./xxx n mode      
+ *  Where n is the size of the random strings that will be comapared (e.g. 20000)
+ *  and mode is the setting for the cache size, 
+ *  where mode = 0 is chunk sizes are 4 times greater than the cache size
+ *  and mode = 1 is setting the chunk size equal to the cache size
+ *  (e.g. ./xxx 20000 0)
+ * Thank you!
+ */
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -21,8 +39,7 @@ std::string generateSequence(int length, int id) {
 }
 
 // Adjust CHUNK_SIZE based on your cache line (e.g., 64 bytes) to manage cache-line alignment
-const int CHUNK_SIZE = (int)(sysconf(_SC_LEVEL1_DCACHE_LINESIZE) / 2);
-
+int CHUNK_SIZE;
 // Scoring parameters
 const int MATCH = 2;
 const int MISMATCH = -1;
@@ -101,12 +118,27 @@ void smithWatermanParallel(const string& seqA, const string& seqB) {
     cout << "Execution time: " << end - start << " (sec)" << endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        cout << "Error: ./filename n mode" << endl;
+        exit(0);
+    }
+
+    int n = atoi(argv[1]);
+    int mode = atoi(argv[2]);
+
+    int reduce; // For trying chunk size that is based on fitting one cache line or more
+    if (mode == 0) 
+        reduce = 1;
+    else
+        reduce = sizeof(int);
+    
+    CHUNK_SIZE = (int)(sysconf(_SC_LEVEL1_DCACHE_LINESIZE) / reduce);
+
     cout << "Chunk size: " << CHUNK_SIZE << endl;
 
-    int str_size = 20000;
-    string s1 = generateSequence(str_size, 1);
-    string s2 = generateSequence(str_size, 2);
+    string s1 = generateSequence(n, 1);
+    string s2 = generateSequence(n, 2);
 
     smithWatermanParallel(s1, s2);
     
