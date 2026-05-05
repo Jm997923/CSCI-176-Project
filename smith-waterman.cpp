@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <chrono>
+#include <random>
 
 using namespace std;
 
@@ -10,15 +12,28 @@ const int MATCH    = 2;
 const int MISMATCH = -1;
 const int GAP      = -1;
 
-void smithWaterman(string seq1, string seq2) {
+// Ported random string generator
+std::string generateSequence(int length, int id) {
+    string bases = "ATGC";
+    string seq = "";
+    mt19937 rng(12345 + id); // Fixed seed for reproducibility
+    uniform_int_distribution<int> dist(0, 3);
+    for (int i = 0; i < length; ++i) {
+        seq += bases[dist(rng)];
+    }
+    return seq;
+}
+
+void smithWaterman(const string& seq1, const string& seq2) {
     int m = seq1.length();
     int n = seq2.length();
     
     // Create (m+1) x (n+1) matrix initialized to 0
     vector<vector<int>> score(m + 1, vector<int>(n + 1, 0));
-    
     int maxScore = 0;
-    int maxI = 0, maxJ = 0;
+
+    // Start High-Resolution Timer
+    auto start = chrono::high_resolution_clock::now();
 
     // 1. Fill the matrix
     for (int i = 1; i <= m; i++) {
@@ -32,50 +47,28 @@ void smithWaterman(string seq1, string seq2) {
                 score[i][j - 1] + GAP                // Left
             });
 
-            // Track highest score for traceback start
+            // Track highest score
             if (score[i][j] > maxScore) {
                 maxScore = score[i][j];
-                maxI = i;
-                maxJ = j;
             }
         }
     }
 
+    // End High-Resolution Timer
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration = end - start;
+
+    cout << "Computation complete." << endl;
     cout << "Alignment Score: " << maxScore << endl;
+    cout << "Execution time: " << duration.count() << " (sec)" << endl;
 
-    // 2. Traceback (Simplified)
-    string align1 = "", align2 = "";
-    int i = maxI, j = maxJ;
-
-    while (i > 0 && j > 0 && score[i][j] > 0) {
-        int current = score[i][j];
-        int diag = score[i - 1][j - 1];
-        int up = score[i - 1][j];
-        int left = score[i][j - 1];
-
-        if (current == diag + ((seq1[i - 1] == seq2[j - 1]) ? MATCH : MISMATCH)) {
-            align1 = seq1[i - 1] + align1;
-            align2 = seq2[j - 1] + align2;
-            i--; j--;
-        } else if (current == up + GAP) {
-            align1 = seq1[i - 1] + align1;
-            align2 = "-" + align2;
-            i--;
-        } else {
-            align1 = "-" + align1;
-            align2 = seq2[j - 1] + align2;
-            j--;
-        }
-    }
-
-    cout << "Local Alignment:" << endl;
-    cout << align1 << endl;
-    cout << align2 << endl;
+    // 2. Traceback (Removed to prevent I/O bottlenecks during benchmarking)
 }
 
 int main() {
-    string s1 = "GGTTAGACTTTGATGAAAAAAAAATGATAAAAAA";
-    string s2 = "GGTTUACGTAGGAAAGGAGAAAA";
+    int str_size = 20000;
+    string s1 = generateSequence(str_size, 1);
+    string s2 = generateSequence(str_size, 2);
     
     smithWaterman(s1, s2);
     
